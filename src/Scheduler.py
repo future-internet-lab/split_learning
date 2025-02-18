@@ -22,8 +22,8 @@ class Scheduler:
         self.time_event_forward = []
         self.time_event_backward = []
 
-    def send_intermediate_output(self, data_id, output, labels, trace, test=False):
-        forward_queue_name = f'intermediate_queue_{self.layer_id}'
+    def send_intermediate_output(self, data_id, output, labels, trace, test=False, cluster=None):
+        forward_queue_name = f'intermediate_queue_{self.layer_id}_{cluster}'
         self.channel.queue_declare(forward_queue_name, durable=False)
 
         if trace:
@@ -78,7 +78,7 @@ class Scheduler:
                                    routing_key='rpc_queue',
                                    body=pickle.dumps(message))
 
-    def train_on_first_layer(self, model, lr, momentum, control_count=5, train_loader=None):
+    def train_on_first_layer(self, model, lr, momentum, control_count=5, train_loader=None, cluster=None):
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
         data_iter = iter(train_loader)
 
@@ -136,7 +136,7 @@ class Scheduler:
                         # tqdm bar
                         pbar.update(1)
 
-                        self.send_intermediate_output(data_id, intermediate_output, labels, None)
+                        self.send_intermediate_output(data_id, intermediate_output, labels, trace=None, test=False, cluster=cluster)
 
                     except StopIteration:
                         end_data = True
@@ -160,12 +160,12 @@ class Scheduler:
                     return True
             time.sleep(0.5)
 
-    def train_on_last_layer(self, model, lr, momentum):
+    def train_on_last_layer(self, model, lr, momentum, cluster):
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
         result = True
 
         criterion = nn.CrossEntropyLoss()
-        forward_queue_name = f'intermediate_queue_{self.layer_id - 1}'
+        forward_queue_name = f'intermediate_queue_{self.layer_id - 1}_{cluster}'
         self.channel.queue_declare(queue=forward_queue_name, durable=False)
         self.channel.basic_qos(prefetch_count=10)
         print('Waiting for intermediate output. To exit press CTRL+C')
@@ -216,7 +216,7 @@ class Scheduler:
                     if received_data["action"] == "PAUSE":
                         return result
 
-    def train_on_middle_layer(self, model, lr, momentum, control_count=5):
+    def train_on_middle_layer(self, model, lr, momentum, control_count=5, cluster=None):
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum)
 
         forward_queue_name = f'intermediate_queue_{self.layer_id - 1}'
@@ -273,7 +273,7 @@ class Scheduler:
                     self.data_count += 1
                     if self.event_time:
                         self.time_event_forward.append(time.time())
-                    self.send_intermediate_output(data_id, output, labels, trace, test)
+                    self.send_intermediate_output(data_id, output, labels, trace, test, cluster=cluster)
                     # speed control
                     if len(data_store) > control_count:
                         continue
@@ -287,14 +287,14 @@ class Scheduler:
                     if received_data["action"] == "PAUSE":
                         return True
 
-    def train_on_device(self, model, lr, momentum, num_layers, control_count, train_loader=None):
+    def train_on_device(self, model, lr, momentum, num_layers, control_count, train_loader=None, cluster=None):
         self.data_count = 0
         if self.layer_id == 1:
-            result = self.train_on_first_layer(model, lr, momentum, control_count, train_loader)
+            result = self.train_on_first_layer(model, lr, momentum, control_count, train_loader, cluster)
         elif self.layer_id == num_layers:
-            result = self.train_on_last_layer(model, lr, momentum)
+            result = self.train_on_last_layer(model, lr, momentum, cluster=cluster)
         else:
-            result = self.train_on_middle_layer(model, lr, momentum, control_count)
+            result = self.train_on_middle_layer(model, lr, momentum, control_count, cluster=cluster)
         if self.event_time:
             src.Log.print_with_color(f"Forward training time events {self.time_event_forward}", "yellow")
             src.Log.print_with_color(f"Backward Training time events {self.time_event_backward}", "yellow")

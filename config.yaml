@@ -1,13 +1,12 @@
 name: Split Learning
 server:
-  num-round: 1
+  local-round: 1
+  global-round: 1
   cut_layers:
-    - 10
     - 20
   clients:
-    - 1
-    - 1
-    - 1
+    - 4
+    - 2
   model: VGG16
   parameters:
     load: False
@@ -21,6 +20,12 @@ server:
     non-iid-rate: 0.5
     refresh-each-round: True
   random-seed: 1
+  client-cluster:
+    enable: True
+    cluster: AffinityPropagation
+    AffinityPropagation:
+      damping: 0.9
+      max_iter: 1000
 
 rabbit:
   address: 192.168.101.234

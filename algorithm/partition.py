@@ -34,19 +34,27 @@ size_data = [33554432, 33554432, 33554432, 33554432, 33554432, 33554432, 8388608
              262144, 262144, 262144, 2097152, 2097152, 2097152, 2097152, 2097152, 5120]
 
 # LAN
-# a1_2 = 5.321956086901455
-# a2_3 = 11.684686209372796
+a1_2 = 5.321956086901455
+a2_3 = 11.684686209372796
 # 5G
-a1_2 = 50
-a2_3 = 50
+# a1_2 = 50
+# a2_3 = 50
+
+# layer1_exe = t_exe_1
+# layer1_comm_data = [x * a1_2 for x in size_data]
+# layer2_exe = t_exe_1
+# layer2_comm_data = [x * a2_3 for x in size_data]
+# layer2_comm_grad = [x * a1_2 for x in size_data]
+# layer3_exe = t_exe_3
+# layer3_comm_grad = [x * a2_3 for x in size_data]
 
 layer1_exe = t_exe_1
 layer1_comm_data = [x * a1_2 for x in size_data]
-layer2_exe = t_exe_2
-layer2_comm_data = [x * a2_3 for x in size_data]
+layer2_exe = t_exe_1
+layer2_comm_data = [x * a1_2 for x in size_data]
 layer2_comm_grad = [x * a1_2 for x in size_data]
-layer3_exe = t_exe_3
-layer3_comm_grad = [x * a2_3 for x in size_data]
+layer3_exe = t_exe_1
+layer3_comm_grad = [x * a1_2 for x in size_data]
 time_min = float('inf')
 result = None
 
