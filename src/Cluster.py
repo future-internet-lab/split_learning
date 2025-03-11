@@ -19,9 +19,9 @@ def clustering_AffinityPropagation(list_performance, num, config):
     affinity_propagation = AffinityPropagation(damping=damping, max_iter=max_iter)
     affinity_propagation.fit(np.array(label_counts).reshape(-1, 1))
 
-    # cluster_centers_indices = affinity_propagation.cluster_centers_indices_
-    # labels = affinity_propagation.labels_
-    # labels = labels.tolist()
+    cluster_centers_indices = affinity_propagation.cluster_centers_indices_
+    labels = affinity_propagation.labels_
+    labels = labels.tolist()
     labels = [0, 0, 1, 1]
     if num == 2:
         cluster_layer_2 = [0, 1]
@@ -29,7 +29,8 @@ def clustering_AffinityPropagation(list_performance, num, config):
         cluster_layer_2 = [0]
 
     infor_cluster = num_client_in_cluster(labels)
-    infor_layer_2 = num_client_in_cluster(cluster_layer_2)
+    print(infor_cluster)
+    infor_layer_2 = [[1], [1]]
     for i in range(len(infor_cluster)):
         infor_cluster[i].append(infor_layer_2[i][0])
     for idx, i in enumerate(list_performance):
@@ -37,5 +38,5 @@ def clustering_AffinityPropagation(list_performance, num, config):
             list_performance[idx] = labels.pop(0)
         else:
             list_performance[idx] = cluster_layer_2.pop()
-    list_cut_layer = [[24], [12]]
+    list_cut_layer = [[14], [24]]
     return list_performance, infor_cluster, 2, list_cut_layer
